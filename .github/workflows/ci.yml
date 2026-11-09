@@ -2,7 +2,8 @@ name: verify
 on: [push, pull_request]
 jobs:
   java:
-    runs-on: ubuntu-latest
+    # Playwright 1.56 supports Ubuntu 24.04, while ubuntu-latest can move ahead.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
