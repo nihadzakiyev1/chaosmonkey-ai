@@ -1,0 +1,89 @@
+name: chaosmonkey-qa
+x-backend: &backend
+  DATABASE_URL: jdbc:postgresql://postgres:5432/chaosmonkey
+  DATABASE_USER: chaosmonkey
+  DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD in .env}
+  CHAOS_ADMIN_USER: ${CHAOS_ADMIN_USER:-admin}
+  CHAOS_ADMIN_PASSWORD: ${CHAOS_ADMIN_PASSWORD:?Set CHAOS_ADMIN_PASSWORD in .env}
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_USER: chaosmonkey
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}
+  REDIS_HOST: redis
+  CHAOS_DEMO_URL: http://demo:8090
+  EVIDENCE_DIRECTORY: /data/evidence
+  CHAOS_AI_BASE_URL: ${CHAOS_AI_BASE_URL:-}
+  CHAOS_AI_API_KEY: ${CHAOS_AI_API_KEY:-}
+  CHAOS_AI_MODEL: ${CHAOS_AI_MODEL:-}
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: chaosmonkey
+      POSTGRES_USER: chaosmonkey
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
+    volumes: [postgres:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U chaosmonkey']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [control]
+    mem_limit: 512m
+  redis:
+    image: redis:7-alpine
+    command: [redis-server, --maxmemory, 64mb, --maxmemory-policy, allkeys-lru]
+    networks: [control]
+    mem_limit: 128m
+  rabbitmq:
+    image: rabbitmq:4-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: chaosmonkey
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD}
+    networks: [control]
+    mem_limit: 512m
+  demo:
+    build: {context: ., target: demo}
+    environment:
+      DEMO_ALLOW_DEFECTS: ${DEMO_ALLOW_DEFECTS:-false}
+    ports: ['127.0.0.1:8090:8090']
+    networks: [sandbox]
+    mem_limit: 384m
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  api:
+    build: {context: ., target: api}
+    environment: *backend
+    volumes: [evidence:/data/evidence:ro]
+    depends_on:
+      postgres: {condition: service_healthy}
+      demo: {condition: service_started}
+    networks: [control, sandbox]
+    mem_limit: 768m
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  worker:
+    build: {context: ., target: worker}
+    environment: *backend
+    volumes: [evidence:/data/evidence]
+    depends_on:
+      postgres: {condition: service_healthy}
+      demo: {condition: service_started}
+    networks: [control, sandbox]
+    mem_limit: 1536m
+    shm_size: 256mb
+    pids_limit: 256
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  web:
+    build: {context: ./chaosmonkey-web}
+    ports: ['127.0.0.1:3000:8080']
+    depends_on: [api]
+    networks: [control]
+    mem_limit: 128m
+networks:
+  control: {}
+  sandbox:
+    internal: true
+volumes:
+  postgres: {}
+  evidence: {}

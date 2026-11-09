@@ -1,0 +1,46 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/chaosmonkey}
+    username: ${DATABASE_USER:chaosmonkey}
+    password: ${DATABASE_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    username: ${RABBITMQ_USER:chaosmonkey}
+    password: ${RABBITMQ_PASSWORD}
+server:
+  error:
+    include-message: never
+  tomcat:
+    max-http-form-post-size: 1MB
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN
+  structured:
+    format:
+      console: logstash
+chaos:
+  ai:
+    base-url: ${CHAOS_AI_BASE_URL:}
+    api-key: ${CHAOS_AI_API_KEY:}
+    model: ${CHAOS_AI_MODEL:}
+  admin-user: ${CHAOS_ADMIN_USER:admin}
+  admin-password: ${CHAOS_ADMIN_PASSWORD}
+  demo-url: ${CHAOS_DEMO_URL:http://localhost:8090}
+  evidence-directory: ${EVIDENCE_DIRECTORY:./data/evidence}

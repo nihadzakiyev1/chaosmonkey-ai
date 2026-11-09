@@ -1,0 +1,10 @@
+server:
+  port: ${PORT:8090}
+  error:
+    include-message: always
+demo:
+  allow-defects: ${DEMO_ALLOW_DEFECTS:false}
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO

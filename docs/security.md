@@ -1,0 +1,13 @@
+# Security boundary
+
+This build is a local sandbox application. Compose exposes dashboard and demo only on loopback. Never repoint `CHAOS_DEMO_URL` to a system without authorization. The administrator-provided origin is trusted as an isolated fixture service; it is not an external user-controlled allowlist.
+
+Target registration requires authorization confirmation and LOCAL_DEMO mode, exact scheme/host/effective-port, no credentials/query/fragment, and an origin-only path. Other addresses, including metadata and private internal services, fail exact-origin checks. DNS is resolved and pinned at process startup; registration/execution revalidates addresses. REST Assured connects to the pinned IPv4 and never follows redirects. Chromium receives a host resolver mapping and blocks all off-origin requests, redirects, service workers, and downloads. Sandbox containers run without a Docker socket, with no-new-privileges, removed capabilities, resource caps, and a separate internal target network.
+
+The operator authenticates with HTTP Basic. The frontend retains the authorization header in memory only and never writes it to localStorage. CSRF is disabled for the stateless API: API writes require explicit Authorization and JSON; no ambient browser session is used. No cross-origin CORS policy is enabled. Use the included same-origin gateway. Internet hosting would require TLS, a production identity provider/session design, user provisioning, and a security review.
+
+Project ownership is checked before target, discovery, scenario, execution, finding, report, and artifact access. Evidence filenames are allowlisted and resolved under execution UUID directories. HTML report strings are escaped. LLM output can select only a bounded category and two integer parameters; it cannot submit executable browser scripts or target URLs. Provider failures fall back to rules.
+
+No target credentials, real payments, user data, or real customer screenshots are accepted. Timeline messages redact common key/value secrets and email patterns, and network evidence omits headers/bodies/query parameters. Screenshots and traces contain synthetic demo data; arbitrary-site trace sanitization is not implemented. Do not add real credentials to the demo. `.env` and evidence data are excluded from source and build context.
+
+The gateway rate-limits API requests. Engine request budgets, concurrent action bounds, socket/browser timeouts, and fixed workers bound execution load. Cancellation is cooperative. Admission limits are not a distributed hard queue quota. The Docker container resource limit provides the final memory/process boundary.
